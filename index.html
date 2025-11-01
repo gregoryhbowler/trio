@@ -1,0 +1,1840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>trio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 300;
+            font-size: 28px;
+            letter-spacing: 2px;
+            color: #5ec4cd;
+        }
+
+        .instruments {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .instrument {
+            background: #242424;
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid #333;
+        }
+
+        .instrument-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .instrument-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #5ec4cd;
+            letter-spacing: 1px;
+        }
+
+        .load-btn {
+            background: #5ec4cd;
+            color: #1a1a1a;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+        }
+
+        .load-btn:hover {
+            background: #7ed4dc;
+            transform: translateY(-1px);
+        }
+
+        .load-btn:active {
+            transform: translateY(0);
+        }
+
+        .waveform-container {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            position: relative;
+            height: 120px;
+        }
+
+        .waveform {
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .drop-zone {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        .drop-zone.active {
+            background: rgba(94, 196, 205, 0.1);
+            border: 2px dashed #5ec4cd;
+            border-radius: 8px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .knob-container {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            margin-bottom: 8px;
+        }
+
+        .knob {
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .knob-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 11px;
+            font-weight: 600;
+            color: #5ec4cd;
+            pointer-events: none;
+        }
+
+        .control-label {
+            font-size: 11px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .scale-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .scale-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .scale-group label {
+            font-size: 10px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select {
+            background: #1a1a1a;
+            color: #e0e0e0;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .playback-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .play-btn {
+            background: #2a2a2a;
+            color: #e0e0e0;
+            border: 1px solid #444;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+            min-width: 80px;
+        }
+
+        .play-btn:hover {
+            background: #333;
+            border-color: #5ec4cd;
+        }
+
+        .play-btn.active {
+            background: #5ec4cd;
+            color: #1a1a1a;
+            border-color: #5ec4cd;
+        }
+
+        .info-display {
+            background: #1a1a1a;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 15px;
+            font-size: 11px;
+            color: #999;
+            text-align: center;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        @media (max-width: 1400px) {
+            .instruments {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .instruments {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .controls {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            body {
+                padding: 10px;
+            }
+            
+            .instrument {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>trio</h1>
+        <div class="instruments">
+            <div class="instrument" id="instrument-a">
+                <div class="instrument-header">
+                    <div class="instrument-title">SAMPLER A</div>
+                    <button class="load-btn" onclick="instruments[0].loadFile()">LOAD SAMPLE</button>
+                    <input type="file" accept="audio/*,video/mp4,video/quicktime" onchange="instruments[0].handleFile(this.files[0])">
+                </div>
+                
+                <div class="waveform-container" ondrop="instruments[0].handleDrop(event)" ondragover="instruments[0].handleDragOver(event)" ondragleave="instruments[0].handleDragLeave(event)">
+                    <canvas class="waveform"></canvas>
+                    <div class="drop-zone">Drop audio/video file or click Load Sample</div>
+                </div>
+
+                <div class="scale-controls">
+                    <div class="scale-group">
+                        <label>Root Note</label>
+                        <select class="root-select">
+                            <option value="0">C</option>
+                            <option value="1">C#</option>
+                            <option value="2">D</option>
+                            <option value="3">D#</option>
+                            <option value="4">E</option>
+                            <option value="5">F</option>
+                            <option value="6">F#</option>
+                            <option value="7">G</option>
+                            <option value="8">G#</option>
+                            <option value="9">A</option>
+                            <option value="10">A#</option>
+                            <option value="11">B</option>
+                        </select>
+                    </div>
+                    <div class="scale-group">
+                        <label>Scale</label>
+                        <select class="scale-select">
+                            <option value="chromatic">Chromatic</option>
+                            <option value="major">Major</option>
+                            <option value="minor">Minor</option>
+                            <option value="dorian">Dorian</option>
+                            <option value="pentatonic">Pentatonic</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <circle cx="95" cy="50" r="2" fill="#5ec4cd"/>
+                                <circle cx="5" cy="50" r="2" fill="#cd5e7a"/>
+                                <circle cx="50" cy="5" r="2" fill="#666"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">→0</div>
+                        </div>
+                        <div class="control-label">Pitch</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">100ms</div>
+                        </div>
+                        <div class="control-label">Grain Size</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">100%</div>
+                        </div>
+                        <div class="control-label">Density</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">0%</div>
+                        </div>
+                        <div class="control-label">Position</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">0%</div>
+                        </div>
+                        <div class="control-label">Spread</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">20k</div>
+                        </div>
+                        <div class="control-label">LPF 1</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">0%</div>
+                        </div>
+                        <div class="control-label">Delay Mix</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">250ms</div>
+                        </div>
+                        <div class="control-label">Delay Time</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">30%</div>
+                        </div>
+                        <div class="control-label">Delay FB</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">0%</div>
+                        </div>
+                        <div class="control-label">Reverb Mix</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">20k</div>
+                        </div>
+                        <div class="control-label">LPF 2</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">100%</div>
+                        </div>
+                        <div class="control-label">Volume</div>
+                    </div>
+                </div>
+
+                <div class="playback-controls">
+                    <button class="play-btn" onclick="instruments[0].playGrains()">PLAY</button>
+                    <button class="play-btn" onclick="instruments[0].stop()">STOP</button>
+                </div>
+
+                <div class="info-display">No sample loaded</div>
+            </div>
+
+            <div class="instrument" id="instrument-b">
+                <div class="instrument-header">
+                    <div class="instrument-title">SAMPLER B</div>
+                    <button class="load-btn" onclick="instruments[1].loadFile()">LOAD SAMPLE</button>
+                    <input type="file" accept="audio/*,video/mp4,video/quicktime" onchange="instruments[1].handleFile(this.files[0])">
+                </div>
+                
+                <div class="waveform-container" ondrop="instruments[1].handleDrop(event)" ondragover="instruments[1].handleDragOver(event)" ondragleave="instruments[1].handleDragLeave(event)">
+                    <canvas class="waveform"></canvas>
+                    <div class="drop-zone">Drop audio/video file or click Load Sample</div>
+                </div>
+
+                <div class="scale-controls">
+                    <div class="scale-group">
+                        <label>Root Note</label>
+                        <select class="root-select">
+                            <option value="0">C</option>
+                            <option value="1">C#</option>
+                            <option value="2">D</option>
+                            <option value="3">D#</option>
+                            <option value="4">E</option>
+                            <option value="5">F</option>
+                            <option value="6">F#</option>
+                            <option value="7">G</option>
+                            <option value="8">G#</option>
+                            <option value="9">A</option>
+                            <option value="10">A#</option>
+                            <option value="11">B</option>
+                        </select>
+                    </div>
+                    <div class="scale-group">
+                        <label>Scale</label>
+                        <select class="scale-select">
+                            <option value="chromatic">Chromatic</option>
+                            <option value="major">Major</option>
+                            <option value="minor">Minor</option>
+                            <option value="dorian">Dorian</option>
+                            <option value="pentatonic">Pentatonic</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <circle cx="95" cy="50" r="2" fill="#5ec4cd"/>
+                                <circle cx="5" cy="50" r="2" fill="#cd5e7a"/>
+                                <circle cx="50" cy="5" r="2" fill="#666"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">→0</div>
+                        </div>
+                        <div class="control-label">Pitch</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">100ms</div>
+                        </div>
+                        <div class="control-label">Grain Size</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">100%</div>
+                        </div>
+                        <div class="control-label">Density</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">0%</div>
+                        </div>
+                        <div class="control-label">Position</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">0%</div>
+                        </div>
+                        <div class="control-label">Spread</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">20k</div>
+                        </div>
+                        <div class="control-label">LPF 1</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">0%</div>
+                        </div>
+                        <div class="control-label">Delay Mix</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">250ms</div>
+                        </div>
+                        <div class="control-label">Delay Time</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">30%</div>
+                        </div>
+                        <div class="control-label">Delay FB</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">0%</div>
+                        </div>
+                        <div class="control-label">Reverb Mix</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">20k</div>
+                        </div>
+                        <div class="control-label">LPF 2</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">100%</div>
+                        </div>
+                        <div class="control-label">Volume</div>
+                    </div>
+                </div>
+
+                <div class="playback-controls">
+                    <button class="play-btn" onclick="instruments[1].playGrains()">PLAY</button>
+                    <button class="play-btn" onclick="instruments[1].stop()">STOP</button>
+                </div>
+
+                <div class="info-display">No sample loaded</div>
+            </div>
+
+            <div class="instrument" id="instrument-c">
+                <div class="instrument-header">
+                    <div class="instrument-title">SAMPLER C</div>
+                    <button class="load-btn" onclick="instruments[2].loadFile()">LOAD SAMPLE</button>
+                    <input type="file" accept="audio/*,video/mp4,video/quicktime" onchange="instruments[2].handleFile(this.files[0])">
+                </div>
+                
+                <div class="waveform-container" ondrop="instruments[2].handleDrop(event)" ondragover="instruments[2].handleDragOver(event)" ondragleave="instruments[2].handleDragLeave(event)">
+                    <canvas class="waveform"></canvas>
+                    <div class="drop-zone">Drop audio/video file or click Load Sample</div>
+                </div>
+
+                <div class="scale-controls">
+                    <div class="scale-group">
+                        <label>Root Note</label>
+                        <select class="root-select">
+                            <option value="0">C</option>
+                            <option value="1">C#</option>
+                            <option value="2">D</option>
+                            <option value="3">D#</option>
+                            <option value="4">E</option>
+                            <option value="5">F</option>
+                            <option value="6">F#</option>
+                            <option value="7">G</option>
+                            <option value="8">G#</option>
+                            <option value="9">A</option>
+                            <option value="10">A#</option>
+                            <option value="11">B</option>
+                        </select>
+                    </div>
+                    <div class="scale-group">
+                        <label>Scale</label>
+                        <select class="scale-select">
+                            <option value="chromatic">Chromatic</option>
+                            <option value="major">Major</option>
+                            <option value="minor">Minor</option>
+                            <option value="dorian">Dorian</option>
+                            <option value="pentatonic">Pentatonic</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <circle cx="95" cy="50" r="2" fill="#5ec4cd"/>
+                                <circle cx="5" cy="50" r="2" fill="#cd5e7a"/>
+                                <circle cx="50" cy="5" r="2" fill="#666"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">→0</div>
+                        </div>
+                        <div class="control-label">Pitch</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">100ms</div>
+                        </div>
+                        <div class="control-label">Grain Size</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">100%</div>
+                        </div>
+                        <div class="control-label">Density</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">0%</div>
+                        </div>
+                        <div class="control-label">Position</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">0%</div>
+                        </div>
+                        <div class="control-label">Spread</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">20k</div>
+                        </div>
+                        <div class="control-label">LPF 1</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">0%</div>
+                        </div>
+                        <div class="control-label">Delay Mix</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">250ms</div>
+                        </div>
+                        <div class="control-label">Delay Time</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">30%</div>
+                        </div>
+                        <div class="control-label">Delay FB</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">0%</div>
+                        </div>
+                        <div class="control-label">Reverb Mix</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">20k</div>
+                        </div>
+                        <div class="control-label">LPF 2</div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="knob-container">
+                            <svg class="knob" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+                                <path class="knob-arc" fill="none" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                                <line class="knob-indicator" x1="50" y1="50" x2="50" y2="15" stroke="#5ec4cd" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                            <div class="knob-value">100%</div>
+                        </div>
+                        <div class="control-label">Volume</div>
+                    </div>
+                </div>
+
+                <div class="playback-controls">
+                    <button class="play-btn" onclick="instruments[2].playGrains()">PLAY</button>
+                    <button class="play-btn" onclick="instruments[2].stop()">STOP</button>
+                </div>
+
+                <div class="info-display">No sample loaded</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Audio Context
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Helper function to reverse an audio buffer
+        function reverseBuffer(buffer) {
+            const reversed = audioContext.createBuffer(
+                buffer.numberOfChannels,
+                buffer.length,
+                buffer.sampleRate
+            );
+            
+            for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+                const channelData = buffer.getChannelData(channel);
+                const reversedData = reversed.getChannelData(channel);
+                for (let i = 0; i < buffer.length; i++) {
+                    reversedData[i] = channelData[buffer.length - 1 - i];
+                }
+            }
+            
+            return reversed;
+        }
+
+        // Scale definitions
+        const scales = {
+            chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+            major: [0, 2, 4, 5, 7, 9, 11],
+            minor: [0, 2, 3, 5, 7, 8, 10],
+            dorian: [0, 2, 3, 5, 7, 9, 10],
+            pentatonic: [0, 2, 4, 7, 9]
+        };
+
+        class GranularSampler {
+            constructor(container) {
+                this.container = container;
+                this.audioBuffer = null;
+                this.reversedBuffer = null;
+                this.isPlaying = false;
+                this.voices = [];
+                this.maxVoices = 6;
+                this.nextGrainTime = 0;
+                
+                // Parameters
+                this.params = {
+                    pitch: 12, // semitones (-24 to +24, 0=stopped, 12=normal forward)
+                    grainSize: 100, // ms
+                    density: 100, // percentage (0-200)
+                    position: 0, // percentage
+                    spread: 0, // percentage
+                    lpf1Freq: 20000, // Hz (before delay)
+                    delayMix: 0, // percentage
+                    delayTime: 250, // ms
+                    delayFeedback: 30, // percentage
+                    reverbMix: 0, // percentage
+                    lpf2Freq: 20000, // Hz (after reverb)
+                    volume: 100 // percentage
+                };
+
+                this.rootNote = 0;
+                this.scale = 'chromatic';
+                
+                this.initEffects();
+                this.initUI();
+                this.initKnobs();
+                this.initWaveformInteraction();
+            }
+
+            initEffects() {
+                // Create grain mixer - all grains connect here first
+                this.grainMixer = audioContext.createGain();
+                this.grainMixer.gain.value = 1.0;
+                
+                // LPF1 - before delay
+                this.lpf1 = audioContext.createBiquadFilter();
+                this.lpf1.type = 'lowpass';
+                this.lpf1.frequency.value = this.params.lpf1Freq;
+                this.lpf1.Q.value = 0.7;
+                
+                // Delay wet/dry mixer
+                this.delayDryGain = audioContext.createGain();
+                this.delayDryGain.gain.value = 1;
+                
+                this.delayWetGain = audioContext.createGain();
+                this.delayWetGain.gain.value = 0;
+                
+                this.delayMixer = audioContext.createGain();
+                this.delayMixer.gain.value = 1.0;
+                
+                // Delay line
+                this.delayNode = audioContext.createDelay(5.0);
+                this.delayNode.delayTime.value = this.params.delayTime / 1000;
+                
+                this.delayFeedbackGain = audioContext.createGain();
+                this.delayFeedbackGain.gain.value = this.params.delayFeedback / 150;
+                
+                // Delay feedback loop with safety
+                this.delayNode.connect(this.delayFeedbackGain);
+                this.delayFeedbackGain.connect(this.delayNode);
+                this.delayNode.connect(this.delayWetGain);
+                
+                // Reverb wet/dry mixer
+                this.reverbDryGain = audioContext.createGain();
+                this.reverbDryGain.gain.value = 1;
+                
+                this.reverbWetGain = audioContext.createGain();
+                this.reverbWetGain.gain.value = 0;
+                
+                this.reverbMixer = audioContext.createGain();
+                this.reverbMixer.gain.value = 1.0;
+                
+                // Reverb
+                this.reverbNode = audioContext.createConvolver();
+                this.createReverbImpulse();
+                this.reverbNode.connect(this.reverbWetGain);
+                
+                // LPF2 - after reverb
+                this.lpf2 = audioContext.createBiquadFilter();
+                this.lpf2.type = 'lowpass';
+                this.lpf2.frequency.value = this.params.lpf2Freq;
+                this.lpf2.Q.value = 0.7;
+                
+                // Add compressor to prevent clipping
+                this.compressor = audioContext.createDynamicsCompressor();
+                this.compressor.threshold.value = -24;
+                this.compressor.knee.value = 12;
+                this.compressor.ratio.value = 12;
+                this.compressor.attack.value = 0.003;
+                this.compressor.release.value = 0.25;
+                
+                // Master output
+                this.masterOut = audioContext.createGain();
+                this.masterOut.gain.value = 0.5;
+                
+                // Connect the persistent effect chain:
+                // grainMixer → lpf1 → [delay dry/wet] → delayMixer → [reverb dry/wet] → reverbMixer → lpf2 → compressor → masterOut → destination
+                this.grainMixer.connect(this.lpf1);
+                
+                // Delay routing
+                this.lpf1.connect(this.delayDryGain);
+                this.lpf1.connect(this.delayNode);
+                this.delayDryGain.connect(this.delayMixer);
+                this.delayWetGain.connect(this.delayMixer);
+                
+                // Reverb routing
+                this.delayMixer.connect(this.reverbDryGain);
+                this.delayMixer.connect(this.reverbNode);
+                this.reverbDryGain.connect(this.reverbMixer);
+                this.reverbWetGain.connect(this.reverbMixer);
+                
+                // Final chain
+                this.reverbMixer.connect(this.lpf2);
+                this.lpf2.connect(this.compressor);
+                this.compressor.connect(this.masterOut);
+                this.masterOut.connect(audioContext.destination);
+            }
+
+            createReverbImpulse() {
+                // Create a nice reverb impulse response
+                const sampleRate = audioContext.sampleRate;
+                const length = sampleRate * 2.5; // 2.5 second reverb
+                const impulse = audioContext.createBuffer(2, length, sampleRate);
+                const leftChannel = impulse.getChannelData(0);
+                const rightChannel = impulse.getChannelData(1);
+                
+                for (let i = 0; i < length; i++) {
+                    const decay = Math.exp(-i / (sampleRate * 0.8)); // Exponential decay
+                    leftChannel[i] = (Math.random() * 2 - 1) * decay;
+                    rightChannel[i] = (Math.random() * 2 - 1) * decay;
+                }
+                
+                this.reverbNode.buffer = impulse;
+            }
+
+            initUI() {
+                this.canvas = this.container.querySelector('.waveform');
+                this.ctx = this.canvas.getContext('2d');
+                this.dropZone = this.container.querySelector('.drop-zone');
+                this.infoDisplay = this.container.querySelector('.info-display');
+                this.fileInput = this.container.querySelector('input[type="file"]');
+                this.rootSelect = this.container.querySelector('.root-select');
+                this.scaleSelect = this.container.querySelector('.scale-select');
+                
+                this.rootSelect.addEventListener('change', (e) => {
+                    this.rootNote = parseInt(e.target.value);
+                });
+                
+                this.scaleSelect.addEventListener('change', (e) => {
+                    this.scale = e.target.value;
+                });
+
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+            }
+
+            resizeCanvas() {
+                const rect = this.canvas.getBoundingClientRect();
+                this.canvas.width = rect.width * window.devicePixelRatio;
+                this.canvas.height = rect.height * window.devicePixelRatio;
+                this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+                if (this.audioBuffer) {
+                    this.drawWaveform();
+                }
+            }
+
+            initWaveformInteraction() {
+                let isDragging = false;
+                
+                // Mouse events
+                this.canvas.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    this.handleWaveformClick(e.clientX);
+                });
+
+                this.canvas.addEventListener('mousemove', (e) => {
+                    if (isDragging) {
+                        this.handleWaveformClick(e.clientX);
+                    }
+                });
+
+                this.canvas.addEventListener('mouseup', () => {
+                    isDragging = false;
+                });
+
+                this.canvas.addEventListener('mouseleave', () => {
+                    isDragging = false;
+                });
+
+                // Touch events
+                this.canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    isDragging = true;
+                    if (e.touches.length > 0) {
+                        this.handleWaveformClick(e.touches[0].clientX);
+                    }
+                }, { passive: false });
+
+                this.canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    if (isDragging && e.touches.length > 0) {
+                        this.handleWaveformClick(e.touches[0].clientX);
+                    }
+                }, { passive: false });
+
+                this.canvas.addEventListener('touchend', () => {
+                    isDragging = false;
+                });
+            }
+
+            handleWaveformClick(clientX) {
+                if (!this.audioBuffer) return;
+                
+                const rect = this.canvas.getBoundingClientRect();
+                const x = clientX - rect.left;
+                const position = (x / rect.width) * 100;
+                
+                // Clamp to 0-100
+                const clampedPosition = Math.max(0, Math.min(100, position));
+                
+                // Update the position parameter
+                this.params.position = clampedPosition;
+                
+                // Update the position knob display
+                this.updatePositionKnob(clampedPosition);
+                
+                // Redraw waveform with new position marker
+                this.drawWaveform();
+            }
+
+            updatePositionKnob(position) {
+                // Find the position knob (4th knob, index 3)
+                const knobs = this.container.querySelectorAll('.knob');
+                const positionKnob = knobs[3];
+                if (!positionKnob) return;
+                
+                const valueDisplay = positionKnob.parentElement.querySelector('.knob-value');
+                const indicator = positionKnob.querySelector('.knob-indicator');
+                const arc = positionKnob.querySelector('.knob-arc');
+                
+                // Update knob visual (position range is 0-100)
+                const normalized = position / 100;
+                const angle = -135 + (normalized * 270);
+                const rad = (angle - 90) * Math.PI / 180;
+                const x2 = 50 + 35 * Math.cos(rad);
+                const y2 = 50 + 35 * Math.sin(rad);
+                indicator.setAttribute('x2', x2);
+                indicator.setAttribute('y2', y2);
+
+                // Update arc
+                const startAngle = -135;
+                const endAngle = angle;
+                const largeArc = (endAngle - startAngle) > 180 ? 1 : 0;
+                const startRad = (startAngle - 90) * Math.PI / 180;
+                const endRad = (endAngle - 90) * Math.PI / 180;
+                const x1 = 50 + 45 * Math.cos(startRad);
+                const y1 = 50 + 45 * Math.sin(startRad);
+                const x2Arc = 50 + 45 * Math.cos(endRad);
+                const y2Arc = 50 + 45 * Math.sin(endRad);
+                arc.setAttribute('d', `M ${x1} ${y1} A 45 45 0 ${largeArc} 1 ${x2Arc} ${y2Arc}`);
+
+                // Update value display
+                valueDisplay.textContent = Math.round(position) + '%';
+            }
+
+            drawPositionMarker(position) {
+                const rect = this.canvas.getBoundingClientRect();
+                const width = rect.width;
+                const height = rect.height;
+                const x = (position / 100) * width;
+                
+                // Draw a vertical line at the position
+                this.ctx.strokeStyle = '#7ed4dc';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(x, 0);
+                this.ctx.lineTo(x, height);
+                this.ctx.stroke();
+                
+                // Draw a small circle at the top
+                this.ctx.fillStyle = '#7ed4dc';
+                this.ctx.beginPath();
+                this.ctx.arc(x, 8, 4, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+
+            initKnobs() {
+                const knobs = this.container.querySelectorAll('.knob');
+                const knobParams = ['pitch', 'grainSize', 'density', 'position', 'spread',
+                                   'lpf1Freq', 'delayMix', 'delayTime', 'delayFeedback', 'reverbMix', 'lpf2Freq', 'volume'];
+                
+                knobs.forEach((knob, index) => {
+                    const param = knobParams[index];
+                    if (!param) return; // Skip if no param assigned
+                    
+                    let isDragging = false;
+                    let startY = 0;
+                    let startValue = 0;
+
+                    const getRanges = (param) => {
+                        switch(param) {
+                            case 'pitch': return { min: -24, max: 24, default: 12 };
+                            case 'grainSize': return { min: 10, max: 2000, default: 100 };
+                            case 'density': return { min: 0, max: 200, default: 100 };
+                            case 'position': return { min: 0, max: 100, default: 0 };
+                            case 'spread': return { min: 0, max: 100, default: 0 };
+                            case 'lpf1Freq': return { min: 100, max: 20000, default: 20000 };
+                            case 'delayMix': return { min: 0, max: 100, default: 0 };
+                            case 'delayTime': return { min: 10, max: 2000, default: 250 };
+                            case 'delayFeedback': return { min: 0, max: 95, default: 30 };
+                            case 'reverbMix': return { min: 0, max: 100, default: 0 };
+                            case 'lpf2Freq': return { min: 100, max: 20000, default: 20000 };
+                            case 'volume': return { min: 0, max: 100, default: 100 };
+                        }
+                    };
+
+                    const range = getRanges(param);
+                    const valueDisplay = knob.parentElement.querySelector('.knob-value');
+                    const indicator = knob.querySelector('.knob-indicator');
+                    const arc = knob.querySelector('.knob-arc');
+
+                    const updateKnob = (value) => {
+                        const normalized = (value - range.min) / (range.max - range.min);
+                        const angle = -135 + (normalized * 270);
+                        const rad = (angle - 90) * Math.PI / 180;
+                        const x2 = 50 + 35 * Math.cos(rad);
+                        const y2 = 50 + 35 * Math.sin(rad);
+                        indicator.setAttribute('x2', x2);
+                        indicator.setAttribute('y2', y2);
+
+                        // Update arc
+                        const startAngle = -135;
+                        const endAngle = angle;
+                        const largeArc = (endAngle - startAngle) > 180 ? 1 : 0;
+                        const startRad = (startAngle - 90) * Math.PI / 180;
+                        const endRad = (endAngle - 90) * Math.PI / 180;
+                        const x1 = 50 + 45 * Math.cos(startRad);
+                        const y1 = 50 + 45 * Math.sin(startRad);
+                        const x2Arc = 50 + 45 * Math.cos(endRad);
+                        const y2Arc = 50 + 45 * Math.sin(endRad);
+                        arc.setAttribute('d', `M ${x1} ${y1} A 45 45 0 ${largeArc} 1 ${x2Arc} ${y2Arc}`);
+
+                        // Update value display
+                        if (param === 'pitch') {
+                            const rawValue = Math.round(value);
+                            if (rawValue < 0) {
+                                const semitones = rawValue + 12;
+                                if (semitones === 0) {
+                                    valueDisplay.textContent = '←0';
+                                } else if (semitones < 0) {
+                                    valueDisplay.textContent = `←${semitones}`;
+                                } else {
+                                    valueDisplay.textContent = `←+${semitones}`;
+                                }
+                                valueDisplay.style.color = '#cd5e7a';
+                            } else if (rawValue === 0) {
+                                valueDisplay.textContent = '◼';
+                                valueDisplay.style.color = '#7ed4dc';
+                            } else {
+                                const semitones = rawValue - 12;
+                                if (semitones === 0) {
+                                    valueDisplay.textContent = '→0';
+                                } else if (semitones > 0) {
+                                    valueDisplay.textContent = `→+${semitones}`;
+                                } else {
+                                    valueDisplay.textContent = `→${semitones}`;
+                                }
+                                valueDisplay.style.color = '#5ec4cd';
+                            }
+                        } else if (param === 'grainSize' || param === 'delayTime') {
+                            valueDisplay.textContent = Math.round(value) + 'ms';
+                        } else if (param === 'lpf1Freq' || param === 'lpf2Freq') {
+                            const freq = Math.round(value);
+                            if (freq >= 1000) {
+                                valueDisplay.textContent = (freq / 1000).toFixed(1) + 'k';
+                            } else {
+                                valueDisplay.textContent = freq + 'Hz';
+                            }
+                        } else {
+                            valueDisplay.textContent = Math.round(value) + '%';
+                        }
+
+                        this.params[param] = value;
+                        
+                        // Update audio nodes in real-time
+                        this.updateEffectParameters(param, value);
+                    };
+
+                    const handleStart = (clientY) => {
+                        isDragging = true;
+                        startY = clientY;
+                        startValue = this.params[param];
+                        knob.style.cursor = 'grabbing';
+                    };
+
+                    const handleMove = (clientY) => {
+                        if (!isDragging) return;
+                        const delta = startY - clientY;
+                        let sensitivity = (range.max - range.min) / 200;
+                        
+                        // Logarithmic scaling for frequency controls
+                        if (param === 'lpf1Freq' || param === 'lpf2Freq') {
+                            const logMin = Math.log(range.min);
+                            const logMax = Math.log(range.max);
+                            const logCurrent = Math.log(startValue);
+                            const logDelta = delta * (logMax - logMin) / 200;
+                            const newValue = Math.exp(logCurrent + logDelta);
+                            updateKnob(Math.max(range.min, Math.min(range.max, newValue)));
+                            return;
+                        }
+                        
+                        let newValue = startValue + (delta * sensitivity);
+                        
+                        // Snap to scale for pitch
+                        if (param === 'pitch' && this.scale !== 'chromatic') {
+                            newValue = this.quantizeToScale(newValue);
+                        }
+                        
+                        newValue = Math.max(range.min, Math.min(range.max, newValue));
+                        updateKnob(newValue);
+                    };
+
+                    const handleEnd = () => {
+                        isDragging = false;
+                        knob.style.cursor = 'pointer';
+                    };
+
+                    // Mouse events
+                    knob.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        handleStart(e.clientY);
+                    });
+
+                    document.addEventListener('mousemove', (e) => handleMove(e.clientY));
+                    document.addEventListener('mouseup', handleEnd);
+
+                    // Touch events
+                    knob.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        handleStart(e.touches[0].clientY);
+                    });
+
+                    document.addEventListener('touchmove', (e) => {
+                        if (isDragging) {
+                            e.preventDefault();
+                            handleMove(e.touches[0].clientY);
+                        }
+                    }, { passive: false });
+
+                    document.addEventListener('touchend', handleEnd);
+
+                    // Initialize
+                    updateKnob(range.default);
+                });
+            }
+
+            updateEffectParameters(param, value) {
+                // Update audio nodes when parameters change
+                switch(param) {
+                    case 'lpf1Freq':
+                        this.lpf1.frequency.setValueAtTime(value, audioContext.currentTime);
+                        break;
+                    case 'delayMix':
+                        this.delayWetGain.gain.setValueAtTime(value / 100, audioContext.currentTime);
+                        this.delayDryGain.gain.setValueAtTime(1 - (value / 100), audioContext.currentTime);
+                        break;
+                    case 'delayTime':
+                        this.delayNode.delayTime.setValueAtTime(value / 1000, audioContext.currentTime);
+                        break;
+                    case 'delayFeedback':
+                        this.delayFeedbackGain.gain.setValueAtTime(value / 150, audioContext.currentTime);
+                        break;
+                    case 'reverbMix':
+                        this.reverbWetGain.gain.setValueAtTime(value / 100, audioContext.currentTime);
+                        this.reverbDryGain.gain.setValueAtTime(1 - (value / 100), audioContext.currentTime);
+                        break;
+                    case 'lpf2Freq':
+                        this.lpf2.frequency.setValueAtTime(value, audioContext.currentTime);
+                        break;
+                }
+            }
+
+            quantizeToScale(semitones) {
+                const scaleIntervals = scales[this.scale];
+                const octave = Math.floor(semitones / 12);
+                const noteInOctave = ((semitones % 12) + 12) % 12;
+                
+                // Find closest note in scale
+                let closest = scaleIntervals[0];
+                let minDiff = Math.abs(noteInOctave - closest);
+                
+                for (let interval of scaleIntervals) {
+                    const diff = Math.abs(noteInOctave - interval);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        closest = interval;
+                    }
+                }
+                
+                return octave * 12 + closest;
+            }
+
+            loadFile() {
+                this.fileInput.click();
+            }
+
+            async handleFile(file) {
+                if (!file) return;
+                
+                try {
+                    this.updateInfo('Loading...');
+                    
+                    // For video files, we need to extract audio
+                    if (file.type.startsWith('video/')) {
+                        await this.extractAudioFromVideo(file);
+                        return;
+                    }
+                    
+                    // For audio files, try direct decoding first
+                    let arrayBuffer = await file.arrayBuffer();
+                    
+                    try {
+                        this.audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                        this.onBufferLoaded();
+                    } catch (decodeError) {
+                        // If direct decoding fails, try converting through audio element
+                        console.log('Direct decode failed, trying conversion...', decodeError);
+                        await this.convertAudioFile(file);
+                    }
+                } catch (error) {
+                    console.error('Error loading file:', error);
+                    this.updateInfo(`Error: ${error.message || 'Could not load file'}`);
+                }
+            }
+
+            async convertAudioFile(file) {
+                this.updateInfo('Converting audio format...');
+                
+                return new Promise((resolve, reject) => {
+                    const audio = new Audio();
+                    const url = URL.createObjectURL(file);
+                    let hasStarted = false;
+                    
+                    audio.addEventListener('loadedmetadata', () => {
+                        const duration = audio.duration;
+                        if (!duration || duration === Infinity) {
+                            URL.revokeObjectURL(url);
+                            reject(new Error('Invalid audio duration'));
+                            return;
+                        }
+                    });
+                    
+                    audio.addEventListener('canplay', async () => {
+                        if (hasStarted) return;
+                        hasStarted = true;
+                        
+                        try {
+                            await audioContext.resume();
+                            
+                            const duration = audio.duration;
+                            const sampleRate = audioContext.sampleRate;
+                            
+                            // Create media element audio source
+                            const source = audioContext.createMediaElementSource(audio);
+                            const dest = audioContext.createMediaStreamDestination();
+                            
+                            source.connect(dest);
+                            source.connect(audioContext.destination);
+                            
+                            // Use MediaRecorder
+                            const recorder = new MediaRecorder(dest.stream, {
+                                mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+                                    ? 'audio/webm;codecs=opus' 
+                                    : 'audio/webm'
+                            });
+                            
+                            const chunks = [];
+                            
+                            recorder.ondataavailable = (e) => {
+                                if (e.data.size > 0) {
+                                    chunks.push(e.data);
+                                }
+                            };
+                            
+                            recorder.onstop = async () => {
+                                try {
+                                    const blob = new Blob(chunks);
+                                    const arrayBuffer = await blob.arrayBuffer();
+                                    this.audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                                    this.onBufferLoaded();
+                                    URL.revokeObjectURL(url);
+                                    resolve();
+                                } catch (error) {
+                                    URL.revokeObjectURL(url);
+                                    reject(error);
+                                }
+                            };
+                            
+                            recorder.onerror = (error) => {
+                                URL.revokeObjectURL(url);
+                                reject(error);
+                            };
+                            
+                            // Start recording and playback
+                            recorder.start(100);
+                            await audio.play();
+                            
+                            audio.onended = () => {
+                                setTimeout(() => {
+                                    recorder.stop();
+                                }, 500);
+                            };
+                            
+                        } catch (error) {
+                            URL.revokeObjectURL(url);
+                            reject(error);
+                        }
+                    });
+                    
+                    audio.addEventListener('error', (e) => {
+                        URL.revokeObjectURL(url);
+                        reject(new Error('Audio element could not load file. Try a different format (MP3, WAV).'));
+                    });
+                    
+                    audio.preload = 'auto';
+                    audio.src = url;
+                    audio.load();
+                });
+            }
+
+            async extractAudioFromVideo(file) {
+                this.updateInfo('Extracting audio from video...');
+                
+                return new Promise((resolve, reject) => {
+                    const video = document.createElement('video');
+                    const url = URL.createObjectURL(file);
+                    video.src = url;
+                    video.muted = false;
+                    video.preload = 'auto';
+                    
+                    let hasStarted = false;
+                    let timeout = setTimeout(() => {
+                        URL.revokeObjectURL(url);
+                        reject(new Error('Video loading timeout. Try extracting audio first.'));
+                    }, 10000);
+                    
+                    video.addEventListener('loadedmetadata', async () => {
+                        if (hasStarted) return;
+                        hasStarted = true;
+                        clearTimeout(timeout);
+                        
+                        try {
+                            await audioContext.resume();
+                            
+                            const duration = video.duration;
+                            if (!duration || duration === Infinity) {
+                                throw new Error('Invalid video duration');
+                            }
+                            
+                            const stream = video.captureStream ? video.captureStream() : video.mozCaptureStream();
+                            const source = audioContext.createMediaElementSource(video);
+                            const dest = audioContext.createMediaStreamDestination();
+                            
+                            source.connect(dest);
+                            
+                            const mediaRecorder = new MediaRecorder(dest.stream, {
+                                mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+                                    ? 'audio/webm;codecs=opus' 
+                                    : 'audio/webm'
+                            });
+                            const chunks = [];
+                            
+                            mediaRecorder.ondataavailable = (e) => {
+                                if (e.data.size > 0) chunks.push(e.data);
+                            };
+                            
+                            mediaRecorder.onstop = async () => {
+                                try {
+                                    const blob = new Blob(chunks);
+                                    const arrayBuffer = await blob.arrayBuffer();
+                                    this.audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                                    this.onBufferLoaded();
+                                    URL.revokeObjectURL(url);
+                                    resolve();
+                                } catch (error) {
+                                    URL.revokeObjectURL(url);
+                                    reject(error);
+                                }
+                            };
+                            
+                            mediaRecorder.start(100);
+                            await video.play();
+                            
+                            video.onended = () => {
+                                setTimeout(() => mediaRecorder.stop(), 300);
+                            };
+                            
+                        } catch (error) {
+                            URL.revokeObjectURL(url);
+                            reject(error);
+                        }
+                    });
+                    
+                    video.addEventListener('error', (e) => {
+                        clearTimeout(timeout);
+                        URL.revokeObjectURL(url);
+                        reject(new Error('Could not load video. Try converting to MP3/WAV first.'));
+                    });
+                    
+                    video.load();
+                });
+            }
+
+            onBufferLoaded() {
+                // Create reversed buffer
+                this.updateInfo('Creating reversed buffer...');
+                this.reversedBuffer = reverseBuffer(this.audioBuffer);
+                
+                this.drawWaveform();
+                const duration = this.audioBuffer.duration.toFixed(2);
+                this.updateInfo(`Loaded: ${duration}s, ${this.audioBuffer.sampleRate}Hz`);
+                this.dropZone.style.display = 'none';
+            }
+
+            drawWaveform() {
+                const rect = this.canvas.getBoundingClientRect();
+                const width = rect.width;
+                const height = rect.height;
+                
+                this.ctx.clearRect(0, 0, width, height);
+                
+                if (!this.audioBuffer) return;
+                
+                const data = this.audioBuffer.getChannelData(0);
+                const step = Math.ceil(data.length / width);
+                const amp = height / 2;
+                
+                this.ctx.fillStyle = '#5ec4cd';
+                this.ctx.beginPath();
+                
+                for (let i = 0; i < width; i++) {
+                    let min = 1.0;
+                    let max = -1.0;
+                    
+                    for (let j = 0; j < step; j++) {
+                        const datum = data[(i * step) + j];
+                        if (datum < min) min = datum;
+                        if (datum > max) max = datum;
+                    }
+                    
+                    const y1 = (1 + min) * amp;
+                    const y2 = (1 + max) * amp;
+                    
+                    this.ctx.fillRect(i, y1, 1, y2 - y1);
+                }
+                
+                // Draw position marker
+                this.drawPositionMarker(this.params.position);
+            }
+
+            updateInfo(text) {
+                this.infoDisplay.textContent = text;
+            }
+
+            playGrains() {
+                if (!this.audioBuffer || this.isPlaying) return;
+                
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                
+                this.isPlaying = true;
+                this.nextGrainTime = audioContext.currentTime;
+                this.scheduleGrains();
+                
+                const playBtn = this.container.querySelector('.play-btn');
+                playBtn.classList.add('active');
+            }
+
+            scheduleGrains() {
+                if (!this.isPlaying) return;
+                
+                const currentTime = audioContext.currentTime;
+                const scheduleAheadTime = 0.1;
+                
+                while (this.nextGrainTime < currentTime + scheduleAheadTime) {
+                    this.playGrain(this.nextGrainTime);
+                    
+                    const grainSizeSeconds = this.params.grainSize / 1000;
+                    const densityFactor = Math.max(0.1, this.params.density / 100);
+                    const interval = grainSizeSeconds / densityFactor;
+                    
+                    this.nextGrainTime += interval;
+                }
+                
+                setTimeout(() => this.scheduleGrains(), 25);
+            }
+
+            playGrain(startTime) {
+                if (!this.audioBuffer) return;
+                
+                // Don't play if pitch is at 0 (stopped)
+                if (this.params.pitch === 0) return;
+                
+                // Manage polyphony
+                const now = audioContext.currentTime;
+                this.voices = this.voices.filter(v => v.endTime > now);
+                
+                if (this.voices.length >= this.maxVoices) {
+                    const oldest = this.voices.shift();
+                    try {
+                        oldest.source.stop(now);
+                    } catch(e) {}
+                }
+
+                const source = audioContext.createBufferSource();
+                const grainGain = audioContext.createGain();
+                
+                // Determine which buffer to use and calculate playback rate
+                let buffer, semitones;
+                if (this.params.pitch < 0) {
+                    buffer = this.reversedBuffer;
+                    semitones = this.params.pitch + 12;
+                } else {
+                    buffer = this.audioBuffer;
+                    semitones = this.params.pitch - 12;
+                }
+                
+                source.buffer = buffer;
+                source.playbackRate.value = Math.abs(Math.pow(2, semitones / 12));
+                
+                // Calculate position in buffer
+                const duration = buffer.duration;
+                const spreadAmount = (this.params.spread / 100) * duration * 0.2;
+                const centerPos = (this.params.position / 100) * duration;
+                const randomSpread = (Math.random() - 0.5) * 2 * spreadAmount;
+                
+                // Grain duration in seconds (adjusted for pitch)
+                const grainDuration = (this.params.grainSize / 1000) / Math.abs(Math.pow(2, semitones / 12));
+                
+                // Calculate offset
+                let offset = centerPos + randomSpread;
+                offset = Math.max(0, Math.min(duration - grainDuration - 0.01, offset));
+                
+                // Validate
+                if (grainDuration <= 0.001 || offset < 0 || offset >= duration) {
+                    return;
+                }
+                
+                // Apply envelope - reduce volume to account for polyphony
+                const attackTime = Math.min(0.01, grainDuration * 0.15);
+                const releaseTime = Math.min(0.01, grainDuration * 0.15);
+                const sustainTime = Math.max(0, grainDuration - attackTime - releaseTime);
+                const volume = (this.params.volume / 100) * 0.4;
+                
+                grainGain.gain.setValueAtTime(0, startTime);
+                grainGain.gain.linearRampToValueAtTime(volume, startTime + attackTime);
+                grainGain.gain.setValueAtTime(volume, startTime + attackTime + sustainTime);
+                grainGain.gain.linearRampToValueAtTime(0, startTime + grainDuration);
+                
+                // Simple routing: source → grainGain → grainMixer (which connects to the persistent effect chain)
+                source.connect(grainGain);
+                grainGain.connect(this.grainMixer);
+                
+                // Start playback
+                try {
+                    source.start(startTime, offset, grainDuration);
+                    source.stop(startTime + grainDuration + 0.1);
+                } catch(e) {
+                    console.error('Error starting grain:', e);
+                    return;
+                }
+                
+                this.voices.push({
+                    source: source,
+                    endTime: startTime + grainDuration
+                });
+            }
+
+            stop() {
+                this.isPlaying = false;
+                this.nextGrainTime = 0;
+                
+                // Stop all active voices
+                const now = audioContext.currentTime;
+                this.voices.forEach(v => {
+                    if (v.source) {
+                        try { 
+                            v.source.stop(now); 
+                        } catch(e) {}
+                    }
+                });
+                this.voices = [];
+                
+                // Clear the delay feedback to prevent lingering sound
+                // Disconnect and reconnect the feedback loop
+                this.delayFeedbackGain.disconnect();
+                this.delayFeedbackGain.connect(this.delayNode);
+                
+                const playBtn = this.container.querySelector('.play-btn');
+                playBtn.classList.remove('active');
+            }
+
+            handleDragOver(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.dropZone.classList.add('active');
+            }
+
+            handleDragLeave(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.dropZone.classList.remove('active');
+            }
+
+            handleDrop(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.dropZone.classList.remove('active');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    this.handleFile(files[0]);
+                }
+            }
+        }
+
+        // Initialize instruments
+        const instruments = [
+            new GranularSampler(document.getElementById('instrument-a')),
+            new GranularSampler(document.getElementById('instrument-b')),
+            new GranularSampler(document.getElementById('instrument-c'))
+        ];
+    </script>
+</body>
+</html>
