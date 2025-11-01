@@ -827,6 +827,7 @@
                 this.maxVoices = 8;
                 this.nextGrainTime = 0;
                 this.effectsInitialized = false;
+                this.modulatedParams = {};
                 
                 // Parameters
                 this.params = {
@@ -1966,6 +1967,9 @@
 
             applyLFOModulation() {
                 if (!this.effectsInitialized) return;
+
+                // Clear previous modulated values - CRITICAL FIX
+                this.modulatedParams = {};
                 
                 const ctx = getAudioContext();
                 const currentTime = ctx.currentTime;
@@ -2042,11 +2046,17 @@
             }
             
             getModulatedParam(param) {
-                if (this.modulatedParams && this.modulatedParams[param] !== undefined) {
-                    return this.modulatedParams[param];
-                }
-                return this.params[param];
-            }
+        // Check if any LFO is actively modulating this parameter
+        const hasActiveLFO = this.lfos.some(lfo => 
+            lfo.target === param && lfo.depth > 0
+        );
+        
+        // Only use modulated value if there's an active LFO for this parameter
+        if (hasActiveLFO && this.modulatedParams && this.modulatedParams[param] !== undefined) {
+            return this.modulatedParams[param];
+        }
+        return this.params[param];
+    }
 
             async handleFile(file) {
                 if (!file) return;
