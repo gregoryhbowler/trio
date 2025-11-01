@@ -71,6 +71,7 @@
             font-weight: 600;
             letter-spacing: 0.5px;
             transition: all 0.2s;
+            position: relative;
         }
 
         .load-btn:hover {
@@ -230,8 +231,13 @@
             text-align: center;
         }
 
+        /* Mobile-friendly file input - visible but styled to look like it's hidden */
         input[type="file"] {
-            display: none;
+            position: absolute;
+            opacity: 0;
+            width: 0.1px;
+            height: 0.1px;
+            pointer-events: none;
         }
 
         @media (max-width: 1400px) {
@@ -268,8 +274,10 @@
             <div class="instrument" id="instrument-a">
                 <div class="instrument-header">
                     <div class="instrument-title">SAMPLER A</div>
-                    <button class="load-btn" onclick="instruments[0].loadFile()">LOAD SAMPLE</button>
-                    <input type="file" accept="audio/*,video/mp4,video/quicktime" onchange="instruments[0].handleFile(this.files[0])">
+                    <label class="load-btn">
+                        LOAD SAMPLE
+                        <input type="file" accept="audio/*,video/mp4,video/quicktime" onchange="instruments[0].handleFile(this.files[0])">
+                    </label>
                 </div>
                 
                 <div class="waveform-container" ondrop="instruments[0].handleDrop(event)" ondragover="instruments[0].handleDragOver(event)" ondragleave="instruments[0].handleDragLeave(event)">
@@ -467,8 +475,10 @@
             <div class="instrument" id="instrument-b">
                 <div class="instrument-header">
                     <div class="instrument-title">SAMPLER B</div>
-                    <button class="load-btn" onclick="instruments[1].loadFile()">LOAD SAMPLE</button>
-                    <input type="file" accept="audio/*,video/mp4,video/quicktime" onchange="instruments[1].handleFile(this.files[0])">
+                    <label class="load-btn">
+                        LOAD SAMPLE
+                        <input type="file" accept="audio/*,video/mp4,video/quicktime" onchange="instruments[1].handleFile(this.files[0])">
+                    </label>
                 </div>
                 
                 <div class="waveform-container" ondrop="instruments[1].handleDrop(event)" ondragover="instruments[1].handleDragOver(event)" ondragleave="instruments[1].handleDragLeave(event)">
@@ -666,8 +676,10 @@
             <div class="instrument" id="instrument-c">
                 <div class="instrument-header">
                     <div class="instrument-title">SAMPLER C</div>
-                    <button class="load-btn" onclick="instruments[2].loadFile()">LOAD SAMPLE</button>
-                    <input type="file" accept="audio/*,video/mp4,video/quicktime" onchange="instruments[2].handleFile(this.files[0])">
+                    <label class="load-btn">
+                        LOAD SAMPLE
+                        <input type="file" accept="audio/*,video/mp4,video/quicktime" onchange="instruments[2].handleFile(this.files[0])">
+                    </label>
                 </div>
                 
                 <div class="waveform-container" ondrop="instruments[2].handleDrop(event)" ondragover="instruments[2].handleDragOver(event)" ondragleave="instruments[2].handleDragLeave(event)">
@@ -865,12 +877,24 @@
     </div>
 
     <script>
-        // Audio Context
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // Audio Context - initialize lazily on first user interaction
+        let audioContext = null;
+
+        function getAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            // Always try to resume on mobile
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            return audioContext;
+        }
 
         // Helper function to reverse an audio buffer
         function reverseBuffer(buffer) {
-            const reversed = audioContext.createBuffer(
+            const ctx = getAudioContext();
+            const reversed = ctx.createBuffer(
                 buffer.numberOfChannels,
                 buffer.length,
                 buffer.sampleRate
@@ -908,18 +932,18 @@
                 
                 // Parameters
                 this.params = {
-                    pitch: 12, // semitones (-24 to +24, 0=stopped, 12=normal forward)
-                    grainSize: 100, // ms
-                    density: 100, // percentage (0-200)
-                    position: 0, // percentage
-                    spread: 0, // percentage
-                    lpf1Freq: 20000, // Hz (before delay)
-                    delayMix: 0, // percentage
-                    delayTime: 250, // ms
-                    delayFeedback: 30, // percentage
-                    reverbMix: 0, // percentage
-                    lpf2Freq: 20000, // Hz (after reverb)
-                    volume: 100 // percentage
+                    pitch: 12,
+                    grainSize: 100,
+                    density: 100,
+                    position: 0,
+                    spread: 0,
+                    lpf1Freq: 20000,
+                    delayMix: 0,
+                    delayTime: 250,
+                    delayFeedback: 30,
+                    reverbMix: 0,
+                    lpf2Freq: 20000,
+                    volume: 100
                 };
 
                 this.rootNote = 0;
@@ -932,61 +956,63 @@
             }
 
             initEffects() {
-                // Create grain mixer - all grains connect here first
-                this.grainMixer = audioContext.createGain();
+                const ctx = getAudioContext();
+                
+                // Create grain mixer
+                this.grainMixer = ctx.createGain();
                 this.grainMixer.gain.value = 1.0;
                 
-                // LPF1 - before delay
-                this.lpf1 = audioContext.createBiquadFilter();
+                // LPF1
+                this.lpf1 = ctx.createBiquadFilter();
                 this.lpf1.type = 'lowpass';
                 this.lpf1.frequency.value = this.params.lpf1Freq;
                 this.lpf1.Q.value = 0.7;
                 
                 // Delay wet/dry mixer
-                this.delayDryGain = audioContext.createGain();
+                this.delayDryGain = ctx.createGain();
                 this.delayDryGain.gain.value = 1;
                 
-                this.delayWetGain = audioContext.createGain();
+                this.delayWetGain = ctx.createGain();
                 this.delayWetGain.gain.value = 0;
                 
-                this.delayMixer = audioContext.createGain();
+                this.delayMixer = ctx.createGain();
                 this.delayMixer.gain.value = 1.0;
                 
                 // Delay line
-                this.delayNode = audioContext.createDelay(5.0);
+                this.delayNode = ctx.createDelay(5.0);
                 this.delayNode.delayTime.value = this.params.delayTime / 1000;
                 
-                this.delayFeedbackGain = audioContext.createGain();
+                this.delayFeedbackGain = ctx.createGain();
                 this.delayFeedbackGain.gain.value = this.params.delayFeedback / 150;
                 
-                // Delay feedback loop with safety
+                // Delay feedback loop
                 this.delayNode.connect(this.delayFeedbackGain);
                 this.delayFeedbackGain.connect(this.delayNode);
                 this.delayNode.connect(this.delayWetGain);
                 
                 // Reverb wet/dry mixer
-                this.reverbDryGain = audioContext.createGain();
+                this.reverbDryGain = ctx.createGain();
                 this.reverbDryGain.gain.value = 1;
                 
-                this.reverbWetGain = audioContext.createGain();
+                this.reverbWetGain = ctx.createGain();
                 this.reverbWetGain.gain.value = 0;
                 
-                this.reverbMixer = audioContext.createGain();
+                this.reverbMixer = ctx.createGain();
                 this.reverbMixer.gain.value = 1.0;
                 
                 // Reverb
-                this.reverbNode = audioContext.createConvolver();
+                this.reverbNode = ctx.createConvolver();
                 this.createReverbImpulse();
                 this.reverbNode.connect(this.reverbWetGain);
                 
-                // LPF2 - after reverb
-                this.lpf2 = audioContext.createBiquadFilter();
+                // LPF2
+                this.lpf2 = ctx.createBiquadFilter();
                 this.lpf2.type = 'lowpass';
                 this.lpf2.frequency.value = this.params.lpf2Freq;
                 this.lpf2.Q.value = 0.7;
                 
-                // Add compressor to prevent clipping
-                this.compressor = audioContext.createDynamicsCompressor();
+                // Compressor
+                this.compressor = ctx.createDynamicsCompressor();
                 this.compressor.threshold.value = -24;
                 this.compressor.knee.value = 12;
                 this.compressor.ratio.value = 12;
@@ -994,11 +1020,10 @@
                 this.compressor.release.value = 0.25;
                 
                 // Master output
-                this.masterOut = audioContext.createGain();
+                this.masterOut = ctx.createGain();
                 this.masterOut.gain.value = 0.5;
                 
-                // Connect the persistent effect chain:
-                // grainMixer → lpf1 → [delay dry/wet] → delayMixer → [reverb dry/wet] → reverbMixer → lpf2 → compressor → masterOut → destination
+                // Connect the effect chain
                 this.grainMixer.connect(this.lpf1);
                 
                 // Delay routing
@@ -1017,19 +1042,19 @@
                 this.reverbMixer.connect(this.lpf2);
                 this.lpf2.connect(this.compressor);
                 this.compressor.connect(this.masterOut);
-                this.masterOut.connect(audioContext.destination);
+                this.masterOut.connect(ctx.destination);
             }
 
             createReverbImpulse() {
-                // Create a nice reverb impulse response
-                const sampleRate = audioContext.sampleRate;
-                const length = sampleRate * 2.5; // 2.5 second reverb
-                const impulse = audioContext.createBuffer(2, length, sampleRate);
+                const ctx = getAudioContext();
+                const sampleRate = ctx.sampleRate;
+                const length = sampleRate * 2.5;
+                const impulse = ctx.createBuffer(2, length, sampleRate);
                 const leftChannel = impulse.getChannelData(0);
                 const rightChannel = impulse.getChannelData(1);
                 
                 for (let i = 0; i < length; i++) {
-                    const decay = Math.exp(-i / (sampleRate * 0.8)); // Exponential decay
+                    const decay = Math.exp(-i / (sampleRate * 0.8));
                     leftChannel[i] = (Math.random() * 2 - 1) * decay;
                     rightChannel[i] = (Math.random() * 2 - 1) * decay;
                 }
@@ -1071,7 +1096,6 @@
             initWaveformInteraction() {
                 let isDragging = false;
                 
-                // Mouse events
                 this.canvas.addEventListener('mousedown', (e) => {
                     isDragging = true;
                     this.handleWaveformClick(e.clientX);
@@ -1091,7 +1115,6 @@
                     isDragging = false;
                 });
 
-                // Touch events
                 this.canvas.addEventListener('touchstart', (e) => {
                     e.preventDefault();
                     isDragging = true;
@@ -1119,21 +1142,13 @@
                 const x = clientX - rect.left;
                 const position = (x / rect.width) * 100;
                 
-                // Clamp to 0-100
                 const clampedPosition = Math.max(0, Math.min(100, position));
-                
-                // Update the position parameter
                 this.params.position = clampedPosition;
-                
-                // Update the position knob display
                 this.updatePositionKnob(clampedPosition);
-                
-                // Redraw waveform with new position marker
                 this.drawWaveform();
             }
 
             updatePositionKnob(position) {
-                // Find the position knob (4th knob, index 3)
                 const knobs = this.container.querySelectorAll('.knob');
                 const positionKnob = knobs[3];
                 if (!positionKnob) return;
@@ -1142,7 +1157,6 @@
                 const indicator = positionKnob.querySelector('.knob-indicator');
                 const arc = positionKnob.querySelector('.knob-arc');
                 
-                // Update knob visual (position range is 0-100)
                 const normalized = position / 100;
                 const angle = -135 + (normalized * 270);
                 const rad = (angle - 90) * Math.PI / 180;
@@ -1151,7 +1165,6 @@
                 indicator.setAttribute('x2', x2);
                 indicator.setAttribute('y2', y2);
 
-                // Update arc
                 const startAngle = -135;
                 const endAngle = angle;
                 const largeArc = (endAngle - startAngle) > 180 ? 1 : 0;
@@ -1163,7 +1176,6 @@
                 const y2Arc = 50 + 45 * Math.sin(endRad);
                 arc.setAttribute('d', `M ${x1} ${y1} A 45 45 0 ${largeArc} 1 ${x2Arc} ${y2Arc}`);
 
-                // Update value display
                 valueDisplay.textContent = Math.round(position) + '%';
             }
 
@@ -1173,7 +1185,6 @@
                 const height = rect.height;
                 const x = (position / 100) * width;
                 
-                // Draw a vertical line at the position
                 this.ctx.strokeStyle = '#7ed4dc';
                 this.ctx.lineWidth = 2;
                 this.ctx.beginPath();
@@ -1181,7 +1192,6 @@
                 this.ctx.lineTo(x, height);
                 this.ctx.stroke();
                 
-                // Draw a small circle at the top
                 this.ctx.fillStyle = '#7ed4dc';
                 this.ctx.beginPath();
                 this.ctx.arc(x, 8, 4, 0, Math.PI * 2);
@@ -1195,7 +1205,7 @@
                 
                 knobs.forEach((knob, index) => {
                     const param = knobParams[index];
-                    if (!param) return; // Skip if no param assigned
+                    if (!param) return;
                     
                     let isDragging = false;
                     let startY = 0;
@@ -1232,7 +1242,6 @@
                         indicator.setAttribute('x2', x2);
                         indicator.setAttribute('y2', y2);
 
-                        // Update arc
                         const startAngle = -135;
                         const endAngle = angle;
                         const largeArc = (endAngle - startAngle) > 180 ? 1 : 0;
@@ -1244,7 +1253,6 @@
                         const y2Arc = 50 + 45 * Math.sin(endRad);
                         arc.setAttribute('d', `M ${x1} ${y1} A 45 45 0 ${largeArc} 1 ${x2Arc} ${y2Arc}`);
 
-                        // Update value display
                         if (param === 'pitch') {
                             const rawValue = Math.round(value);
                             if (rawValue < 0) {
@@ -1285,8 +1293,6 @@
                         }
 
                         this.params[param] = value;
-                        
-                        // Update audio nodes in real-time
                         this.updateEffectParameters(param, value);
                     };
 
@@ -1302,7 +1308,6 @@
                         const delta = startY - clientY;
                         let sensitivity = (range.max - range.min) / 200;
                         
-                        // Logarithmic scaling for frequency controls
                         if (param === 'lpf1Freq' || param === 'lpf2Freq') {
                             const logMin = Math.log(range.min);
                             const logMax = Math.log(range.max);
@@ -1315,7 +1320,6 @@
                         
                         let newValue = startValue + (delta * sensitivity);
                         
-                        // Snap to scale for pitch
                         if (param === 'pitch' && this.scale !== 'chromatic') {
                             newValue = this.quantizeToScale(newValue);
                         }
@@ -1329,7 +1333,6 @@
                         knob.style.cursor = 'pointer';
                     };
 
-                    // Mouse events
                     knob.addEventListener('mousedown', (e) => {
                         e.preventDefault();
                         handleStart(e.clientY);
@@ -1338,7 +1341,6 @@
                     document.addEventListener('mousemove', (e) => handleMove(e.clientY));
                     document.addEventListener('mouseup', handleEnd);
 
-                    // Touch events
                     knob.addEventListener('touchstart', (e) => {
                         e.preventDefault();
                         handleStart(e.touches[0].clientY);
@@ -1353,33 +1355,32 @@
 
                     document.addEventListener('touchend', handleEnd);
 
-                    // Initialize
                     updateKnob(range.default);
                 });
             }
 
             updateEffectParameters(param, value) {
-                // Update audio nodes when parameters change
+                const ctx = getAudioContext();
                 switch(param) {
                     case 'lpf1Freq':
-                        this.lpf1.frequency.setValueAtTime(value, audioContext.currentTime);
+                        this.lpf1.frequency.setValueAtTime(value, ctx.currentTime);
                         break;
                     case 'delayMix':
-                        this.delayWetGain.gain.setValueAtTime(value / 100, audioContext.currentTime);
-                        this.delayDryGain.gain.setValueAtTime(1 - (value / 100), audioContext.currentTime);
+                        this.delayWetGain.gain.setValueAtTime(value / 100, ctx.currentTime);
+                        this.delayDryGain.gain.setValueAtTime(1 - (value / 100), ctx.currentTime);
                         break;
                     case 'delayTime':
-                        this.delayNode.delayTime.setValueAtTime(value / 1000, audioContext.currentTime);
+                        this.delayNode.delayTime.setValueAtTime(value / 1000, ctx.currentTime);
                         break;
                     case 'delayFeedback':
-                        this.delayFeedbackGain.gain.setValueAtTime(value / 150, audioContext.currentTime);
+                        this.delayFeedbackGain.gain.setValueAtTime(value / 150, ctx.currentTime);
                         break;
                     case 'reverbMix':
-                        this.reverbWetGain.gain.setValueAtTime(value / 100, audioContext.currentTime);
-                        this.reverbDryGain.gain.setValueAtTime(1 - (value / 100), audioContext.currentTime);
+                        this.reverbWetGain.gain.setValueAtTime(value / 100, ctx.currentTime);
+                        this.reverbDryGain.gain.setValueAtTime(1 - (value / 100), ctx.currentTime);
                         break;
                     case 'lpf2Freq':
-                        this.lpf2.frequency.setValueAtTime(value, audioContext.currentTime);
+                        this.lpf2.frequency.setValueAtTime(value, ctx.currentTime);
                         break;
                 }
             }
@@ -1389,7 +1390,6 @@
                 const octave = Math.floor(semitones / 12);
                 const noteInOctave = ((semitones % 12) + 12) % 12;
                 
-                // Find closest note in scale
                 let closest = scaleIntervals[0];
                 let minDiff = Math.abs(noteInOctave - closest);
                 
@@ -1404,30 +1404,27 @@
                 return octave * 12 + closest;
             }
 
-            loadFile() {
-                this.fileInput.click();
-            }
-
             async handleFile(file) {
                 if (!file) return;
+                
+                // Initialize audio context on user interaction
+                getAudioContext();
                 
                 try {
                     this.updateInfo('Loading...');
                     
-                    // For video files, we need to extract audio
                     if (file.type.startsWith('video/')) {
                         await this.extractAudioFromVideo(file);
                         return;
                     }
                     
-                    // For audio files, try direct decoding first
                     let arrayBuffer = await file.arrayBuffer();
                     
                     try {
-                        this.audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                        const ctx = getAudioContext();
+                        this.audioBuffer = await ctx.decodeAudioData(arrayBuffer);
                         this.onBufferLoaded();
                     } catch (decodeError) {
-                        // If direct decoding fails, try converting through audio element
                         console.log('Direct decode failed, trying conversion...', decodeError);
                         await this.convertAudioFile(file);
                     }
@@ -1459,19 +1456,15 @@
                         hasStarted = true;
                         
                         try {
-                            await audioContext.resume();
+                            const ctx = getAudioContext();
+                            await ctx.resume();
                             
-                            const duration = audio.duration;
-                            const sampleRate = audioContext.sampleRate;
-                            
-                            // Create media element audio source
-                            const source = audioContext.createMediaElementSource(audio);
-                            const dest = audioContext.createMediaStreamDestination();
+                            const source = ctx.createMediaElementSource(audio);
+                            const dest = ctx.createMediaStreamDestination();
                             
                             source.connect(dest);
-                            source.connect(audioContext.destination);
+                            source.connect(ctx.destination);
                             
-                            // Use MediaRecorder
                             const recorder = new MediaRecorder(dest.stream, {
                                 mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
                                     ? 'audio/webm;codecs=opus' 
@@ -1490,7 +1483,7 @@
                                 try {
                                     const blob = new Blob(chunks);
                                     const arrayBuffer = await blob.arrayBuffer();
-                                    this.audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                                    this.audioBuffer = await ctx.decodeAudioData(arrayBuffer);
                                     this.onBufferLoaded();
                                     URL.revokeObjectURL(url);
                                     resolve();
@@ -1505,7 +1498,6 @@
                                 reject(error);
                             };
                             
-                            // Start recording and playback
                             recorder.start(100);
                             await audio.play();
                             
@@ -1554,16 +1546,16 @@
                         clearTimeout(timeout);
                         
                         try {
-                            await audioContext.resume();
+                            const ctx = getAudioContext();
+                            await ctx.resume();
                             
                             const duration = video.duration;
                             if (!duration || duration === Infinity) {
                                 throw new Error('Invalid video duration');
                             }
                             
-                            const stream = video.captureStream ? video.captureStream() : video.mozCaptureStream();
-                            const source = audioContext.createMediaElementSource(video);
-                            const dest = audioContext.createMediaStreamDestination();
+                            const source = ctx.createMediaElementSource(video);
+                            const dest = ctx.createMediaStreamDestination();
                             
                             source.connect(dest);
                             
@@ -1582,7 +1574,7 @@
                                 try {
                                     const blob = new Blob(chunks);
                                     const arrayBuffer = await blob.arrayBuffer();
-                                    this.audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                                    this.audioBuffer = await ctx.decodeAudioData(arrayBuffer);
                                     this.onBufferLoaded();
                                     URL.revokeObjectURL(url);
                                     resolve();
@@ -1616,7 +1608,6 @@
             }
 
             onBufferLoaded() {
-                // Create reversed buffer
                 this.updateInfo('Creating reversed buffer...');
                 this.reversedBuffer = reverseBuffer(this.audioBuffer);
                 
@@ -1658,7 +1649,6 @@
                     this.ctx.fillRect(i, y1, 1, y2 - y1);
                 }
                 
-                // Draw position marker
                 this.drawPositionMarker(this.params.position);
             }
 
@@ -1669,12 +1659,13 @@
             playGrains() {
                 if (!this.audioBuffer || this.isPlaying) return;
                 
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume();
+                const ctx = getAudioContext();
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
                 }
                 
                 this.isPlaying = true;
-                this.nextGrainTime = audioContext.currentTime;
+                this.nextGrainTime = ctx.currentTime;
                 this.scheduleGrains();
                 
                 const playBtn = this.container.querySelector('.play-btn');
@@ -1684,7 +1675,8 @@
             scheduleGrains() {
                 if (!this.isPlaying) return;
                 
-                const currentTime = audioContext.currentTime;
+                const ctx = getAudioContext();
+                const currentTime = ctx.currentTime;
                 const scheduleAheadTime = 0.1;
                 
                 while (this.nextGrainTime < currentTime + scheduleAheadTime) {
@@ -1702,12 +1694,10 @@
 
             playGrain(startTime) {
                 if (!this.audioBuffer) return;
-                
-                // Don't play if pitch is at 0 (stopped)
                 if (this.params.pitch === 0) return;
                 
-                // Manage polyphony
-                const now = audioContext.currentTime;
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
                 this.voices = this.voices.filter(v => v.endTime > now);
                 
                 if (this.voices.length >= this.maxVoices) {
@@ -1717,10 +1707,9 @@
                     } catch(e) {}
                 }
 
-                const source = audioContext.createBufferSource();
-                const grainGain = audioContext.createGain();
+                const source = ctx.createBufferSource();
+                const grainGain = ctx.createGain();
                 
-                // Determine which buffer to use and calculate playback rate
                 let buffer, semitones;
                 if (this.params.pitch < 0) {
                     buffer = this.reversedBuffer;
@@ -1733,25 +1722,20 @@
                 source.buffer = buffer;
                 source.playbackRate.value = Math.abs(Math.pow(2, semitones / 12));
                 
-                // Calculate position in buffer
                 const duration = buffer.duration;
                 const spreadAmount = (this.params.spread / 100) * duration * 0.2;
                 const centerPos = (this.params.position / 100) * duration;
                 const randomSpread = (Math.random() - 0.5) * 2 * spreadAmount;
                 
-                // Grain duration in seconds (adjusted for pitch)
                 const grainDuration = (this.params.grainSize / 1000) / Math.abs(Math.pow(2, semitones / 12));
                 
-                // Calculate offset
                 let offset = centerPos + randomSpread;
                 offset = Math.max(0, Math.min(duration - grainDuration - 0.01, offset));
                 
-                // Validate
                 if (grainDuration <= 0.001 || offset < 0 || offset >= duration) {
                     return;
                 }
                 
-                // Apply envelope - reduce volume to account for polyphony
                 const attackTime = Math.min(0.01, grainDuration * 0.15);
                 const releaseTime = Math.min(0.01, grainDuration * 0.15);
                 const sustainTime = Math.max(0, grainDuration - attackTime - releaseTime);
@@ -1762,11 +1746,9 @@
                 grainGain.gain.setValueAtTime(volume, startTime + attackTime + sustainTime);
                 grainGain.gain.linearRampToValueAtTime(0, startTime + grainDuration);
                 
-                // Simple routing: source → grainGain → grainMixer (which connects to the persistent effect chain)
                 source.connect(grainGain);
                 grainGain.connect(this.grainMixer);
                 
-                // Start playback
                 try {
                     source.start(startTime, offset, grainDuration);
                     source.stop(startTime + grainDuration + 0.1);
@@ -1785,8 +1767,8 @@
                 this.isPlaying = false;
                 this.nextGrainTime = 0;
                 
-                // Stop all active voices
-                const now = audioContext.currentTime;
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
                 this.voices.forEach(v => {
                     if (v.source) {
                         try { 
@@ -1796,8 +1778,6 @@
                 });
                 this.voices = [];
                 
-                // Clear the delay feedback to prevent lingering sound
-                // Disconnect and reconnect the feedback loop
                 this.delayFeedbackGain.disconnect();
                 this.delayFeedbackGain.connect(this.delayNode);
                 
