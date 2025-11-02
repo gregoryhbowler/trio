@@ -1382,7 +1382,7 @@
                 const controlsContainer = this.container.querySelector(`#controls-${this.index}`);
                 const knobParams = [
                     { name: 'pitch', label: 'Pitch', min: -24, max: 24, default: 12 },
-                    { name: 'grainSize', label: 'Grain Size', min: 10, max: 2000, default: 100, sync: true },
+                    { name: 'grainSize', label: 'Grain Size', min: 10, max: 4000, default: 100, sync: true },
                     { name: 'density', label: 'Density', min: 0, max: 200, default: 100, sync: true },
                     { name: 'position', label: 'Position', min: 0, max: 100, default: 0 },
                     { name: 'spread', label: 'Spread', min: 0, max: 100, default: 0 },
@@ -1983,7 +1983,7 @@
                     // Get parameter range
                     const ranges = {
                         pitch: { min: -24, max: 24 },
-                        grainSize: { min: 10, max: 2000 },
+                        grainSize: { min: 10, max: 4000 },
                         density: { min: 0, max: 200 },
                         position: { min: 0, max: 100 },
                         spread: { min: 0, max: 100 },
@@ -2532,7 +2532,7 @@
                         // Get config for this parameter
                         const configs = {
                             pitch: { min: -24, max: 24 },
-                            grainSize: { min: 10, max: 2000 },
+                            grainSize: { min: 10, max: 4000 },
                             density: { min: 0, max: 200 },
                             position: { min: 0, max: 100 },
                             spread: { min: 0, max: 100 },
